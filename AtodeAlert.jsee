@@ -1,0 +1,21 @@
+﻿#include "AtodeAlertParsers.jsee"
+#include "AtodeAlertResultViewers.jsee"
+
+
+var $d = document;
+
+//マクロファイルは対象外
+if($d.FullName.match(new RegExp("\.jsee$")))
+	return;
+
+var resultViewer = createResultViewer();
+var parser = createParser(function(atode){ 
+	resultViewer.addAtodeyaru(atode);
+});
+
+var lineLength = $d.GetLines();
+for(var i=1;i<=lineLength;i++){
+	parser.parseLine(i, $d.GetLine(i));
+}
+
+resultViewer.show();

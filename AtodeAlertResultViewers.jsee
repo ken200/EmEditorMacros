@@ -1,0 +1,103 @@
+﻿#include "Utils.jsee"
+
+//結果表示オブジェクトの生成
+//インクルードされるファイルはfunctionが1つ以上含まれていないとエラーになるようだ。エラー回避のためにオブジェクト生成関数を定義している。
+function createResultViewer(){
+
+	//アウトプットバー操作ラッパー
+	var OutputBarWriter = function(){
+		var $ob = OutputBar;
+		var _show = function(){ $ob.Visible = true;}
+		var _hide = function(){ $ob.Visible = false;}
+		var _writeLine = function(str){ $ob.writeln(str);}
+		var _clearAll = function(){ $ob.Clear();}
+		
+		return{
+			writeLine : _writeLine,
+			clearAll : _clearAll,
+			show : _show,
+			hide : _hide
+		}
+	};
+
+	//アウトプットバーに結果表示する
+	var OutputBarResultView = function(writer){
+		var _writer = writer;
+		var _added = false;
+		
+		var _addAtodeyaru = function(atode){
+			if(!_added){
+				_writer.clearAll();
+				_writer.writeLine("■残作業一覧");
+			}
+			_writer.writeLine(atode.FileFullName + "(" + atode.LineNo + "):" + "\t" + atode.Title);  //タグジャンプが行えるようにした(F10キー)
+			_added = true;
+		}
+		
+		var _show = function(){
+			if(_added)
+				_writer.show();
+		}
+		
+		return {
+			addAtodeyaru : _addAtodeyaru,
+			show : _show
+		}
+	};
+
+	//アラートダイアログを表示させる
+	var AtodeyaruAlert = function(){
+		var _items = [];
+		var _addAtodeyaru = function(atode){
+			_items.push(atode);
+		}
+		
+		var _show = function(){
+			var u = createUtils();
+			for(var i=0;i<_items.length;i++)
+				alert(u.format("あとでやる({0}/{1})： {2}", [i+1, _items.length, _items[i].Title]));
+		}
+		
+		return {
+			addAtodeyaru : _addAtodeyaru,
+			show : _show
+		}
+	};
+
+	//アウトプットバーに結果表示する（改良版）
+	var OutputBarResultViewEx = function(writer){
+		var _w = writer
+		var _items = {};  //Key:ハッシュタグ、Value：AtodeYaruItemの配列
+		
+		var _addAtodeyaru = function(atode){
+			var tag = atode.getHashTag()
+			if(_items[tag] === undefined)
+				_items[tag] = [];
+			_items[tag].push(atode);
+		}
+		
+		var _show = function(){
+			_w.clearAll();
+			for(var k in _items){
+				_w.writeLine("タグ: " + (k ? k : "(なし)"));
+				var items = _items[k];
+				for(var i=0;i<items.length;i++){
+					var item = items[i];
+					_w.writeLine("    " + item.FileFullName + "(" + item.LineNo + "):" + "\t" + item.getTitleWithoutHashTag());  //タグジャンプが行えるようにした(F10キー)
+				}
+				//_w.writeLine("");
+			}
+			_w.show();
+		}
+		
+		return {
+			addAtodeyaru : _addAtodeyaru,
+			show : _show
+		}
+	};
+
+
+	//return new OutputBarResultView(new OutputBarWriter());
+	//return new AtodeyaruAlert();
+	return new OutputBarResultViewEx(new OutputBarWriter());
+}

@@ -1,0 +1,95 @@
+﻿#include "Utils.jsee"
+
+//時刻範囲の検索
+var TimeFinder = function(){
+	var _search = function(str, findCallback){
+		
+		if(!str.match(/(\(\d{1,2}:\d\d～.+\))/))
+			return;
+		
+		var target = RegExp.$1.replace("\(","").replace("\)","");
+		var splited = target.split("、");
+		for(var i=0;i<splited.length;i++){
+			var fromYM = splited[i].split("～")[0];
+			var toYM = splited[i].split("～")[1];
+			findCallback(
+				new Time(fromYM.split(":")[0], fromYM.split(":")[1]), 
+				new Time(toYM.split(":")[0], toYM.split(":")[1])
+			);
+		}
+	}
+
+	return {
+		search : _search
+	}
+}
+
+//時刻クラス
+var Time = function(h, m){
+	var _h = h === undefined ? 0 : parseInt(h);
+	var _m = m === undefined ? 0 : parseInt(m);
+	
+	var _convMinutes = function(t){
+		return t.hour * 60 + t.minutes;
+	}
+	
+	var _calcHour = function(m){
+		return parseInt(m / 60, 10);
+	}
+	
+	var _calcMinutes = function(m){
+		return m - 60 * _calcHour(m);
+	}
+	
+	var _substract = function(t){
+		var sub = _convMinutes(t) - _convMinutes(this);
+		return new Time(_calcHour(sub), _calcMinutes(sub));
+	}
+	
+	var _add = function(t){
+		var sum = _convMinutes(t) + _convMinutes(this);
+		return new Time(_calcHour(sum), _calcMinutes(sum));
+	}
+	
+	return {
+		hour : _h,
+		minutes : _m,
+		substract : _substract,
+		add : _add
+	}
+}
+
+function timeMain(){
+	var $util = createUtils();
+
+	Window.Redraw = false;
+
+	var lineProc = function(){
+		//現在行を選択し、選択文字列を取得＆末尾の改行を削除する。
+		document.selection.SelectLine();
+		var lineStr = document.selection.text.replace("\r\n","");
+		
+		var finder = new TimeFinder();
+		var totalTime = new Time();
+
+		finder.search(lineStr, function(t1,t2){
+			totalTime = totalTime.add(t1.substract(t2));
+		});
+		
+		document.selection.text = $util.format("{0}\t[{1:00}:{2:00}]\r\n", [lineStr, totalTime.hour, totalTime.minutes]);
+	}
+
+	//todo: 現在行～最下行までを対象にする。
+	//var curRowNo = document.selection.GetActivePointY(eePosView);
+	//var textlineCount = document.GetLines();
+	//for(var i=curRowNo;i<=textlineCount;i++){
+	//	document.selection.LineDown(1);
+	//	lineProc();
+	//}
+	lineProc();
+
+	//選択解除
+	document.selection.Collapse();
+	Window.Redraw = true;
+}
+timeMain();

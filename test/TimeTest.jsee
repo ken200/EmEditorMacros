@@ -1,0 +1,57 @@
+﻿#include "..\Time.jsee"
+#include "..\Utils.jsee"
+
+function RunTest(timeMaker, finder){
+	OutputBar.Clear();
+	OutputBar.Visible = true;	[00:00]
+	var $util = createUtils();
+
+	//時間間隔の計算テスト
+	(function(){
+		var templateSubstractTest = function(t1,t2){
+			var ts = t1.substract(t2);
+			OutputBar.writeln($util.format("{0:00}:{1:00}～{2:00}:{3:00} → {4:00}時間{5:00}分", [t1.hour,t1.minutes,t2.hour,t2.minutes,ts.hour,ts.minutes]));
+		};
+		
+		//時間間隔計算
+		templateSubstractTest(timeMaker(3,10), timeMaker(7,20));
+		//分の繰り上げ計算あり
+		templateSubstractTest(timeMaker(3,50), timeMaker(7,10));
+		//差が60分より小さい
+		templateSubstractTest(timeMaker(3,50), timeMaker(3,55));
+		//差がちょうどN時間
+		templateSubstractTest(timeMaker(3,00), timeMaker(12,00));
+		//差がちょうどN時間
+		templateSubstractTest(timeMaker(10,00), timeMaker(11,00));
+		//差がない
+		templateSubstractTest(timeMaker(15,33), timeMaker(15,33));
+	})();
+
+	//時間間隔の合算テスト
+	(function(){
+		var templateAddTest = function(t1,t2){
+			var ts = t1.add(t2);
+			OutputBar.writeln($util.format("{0:00}:{1:00} + {2:00}:{3:00} → {4:00}時間{5:00}分", [t1.hour,t1.minutes,t2.hour,t2.minutes,ts.hour,ts.minutes]));
+		};
+		
+		templateAddTest(timeMaker(3,10), timeMaker(7,20));
+		templateAddTest(timeMaker(3,50), timeMaker(7,10));
+		templateAddTest(timeMaker(3,50), timeMaker(3,55));
+		templateAddTest(timeMaker(3,00), timeMaker(12,00));
+		templateAddTest(timeMaker(15,33), timeMaker(15,33));
+		templateAddTest(timeMaker(0,10), timeMaker(0,20));
+	})();
+	
+	//時間範囲の検索テスト
+	(function(){
+		var callback = function(f, t){
+			OutputBar.writeln($util.format("From {0:00}:{1:00} To {2:00}:{3:00}", [f.hour,f.minutes,t.hour,t.minutes]));
+		}
+		
+		finder.search("■作業 (10:00～15:00)", callback);
+		finder.search("■作業2 (9:00～9:01、10:00～15:00、15:30～16:25)", callback);
+		finder.search("■作業3 (ただし作業3.5はスキップする) (7:30～9:00、13:00～13:45)", callback);
+	})();
+}
+
+RunTest(function(t1,t2){return new Time(t1,t2);}, new TimeFinder());

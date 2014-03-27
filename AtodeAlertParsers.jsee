@@ -1,0 +1,244 @@
+﻿/**
+* パースオブジェクトの生成
+*/
+function createParser(addCallback){
+	
+	var ExistKeywordFilter = function(findWord){
+		var _reg = new RegExp("^.+" + findWord + ".*$");
+		var _check = function(str){
+			return str.match(_reg);
+		}
+		return {
+			check : _check
+		}
+	};
+
+	var NotExistKeywordFilter = function(ngword){
+		var _existKeywordFilter = new ExistKeywordFilter(ngword);
+		var _check = function(str){
+			return !_existKeywordFilter.check(str);
+		}
+		return {
+			check : _check
+		}
+	};
+
+	var ParseTargetANDFilter = function(filters){
+		var _filters = filters;
+		var _check = function(str){
+			for(var i=0;i<_filters.length;i++){
+				if(!_filters[i].check(str))
+					return false;
+			}
+			return true;
+		}
+		
+		return {
+			check : _check
+		}
+	};
+
+	var AtodeYaru = function(fullName){
+		var AtodeYaruItem = function(){
+			var _tag = false;
+			
+			var _getHashTag = function(){
+				//複数個のタグには対応していない。
+				if(_tag)
+					return _tag;
+				if(!this.Title.match(new RegExp("^.+(\#.+)$")))
+					return "";
+				_tag = RegExp.$1;
+				return _tag;
+			}
+			
+			var _getTitleWithoutHashTag = function(){
+				var t = this.getHashTag();
+				return this.Title.replace(t, "");
+			}
+			
+			return {
+				No : -1,
+				Title : "",
+				Detail : "",
+				FileFullname : "",
+				LineNo : -1,
+				getHashTag : _getHashTag,
+				getTitleWithoutHashTag : _getTitleWithoutHashTag
+			}
+		}
+
+		var _count = 0;
+		var _fullname = fullName;
+		
+		var _createNewItem = function(){
+			var newItem = new AtodeYaruItem();
+			newItem.No = ++_count;
+			newItem.FileFullName = _fullname;
+			return newItem;
+		}
+		
+		return {
+			createNewItem : _createNewItem
+		}
+	};
+
+	var AtodeListParser = function(params){
+		/* 仕様など
+		a) あとでやるリストフォーマット概要
+		"【あとで】"行～空行までを、1つのあとでやるリストとする。
+		リストアイテム種類としては、番号付アイテム（＜全角数字＞、＜アイテムタイトル＞) と 単純アイテム(・＜アイテムタイトル＞)の2種類が存在する。
+		また、リストアイテムには詳細内容を記述することも可能。(ただし、本パーサーでは出力結果には含まれない。)
+		複数個所でリストが作成されても、1つにマージされて出力する。
+
+
+		b) リスト例1(番号付リスト)
+		【あとで】
+		１、あとでやることその1
+		２、あとでやることその2
+		３、あとでやることその3
+
+
+		c) リスト例2(単純リスト)
+		【あとで】
+		・後でやること１
+		・後でやること２
+		・後でやること３
+
+
+		d) リスト例3(番号付,詳細内容付きリスト)
+		【あとで】
+		１、あとでやることその1
+			どういうことをやるのか詳細記述
+		２、あとでやることその2
+			どういうことをやるのか詳細記述
+		３、あとでやることその3
+			どういうことをやるのか詳細記述
+
+
+		e) リスト例4(単純リスト,詳細内容付きリスト)
+		【あとで】
+		・後でやること１
+			やること詳細1-1
+		・後でやること２
+			やること詳細2-1
+			やること詳細2-2
+		・後でやること３
+			やること詳細3-1
+			やること詳細3-2
+			やること詳細3-3
+
+		*/
+
+		var _atodeMark = params.atodeMark;
+		var _detectedCallback = params.detectedCallback;
+		var _itemMng = params.itemMng;
+		var _targetFilter = params.targetFilter;
+		var _started = false;
+		
+		var _isStart = function(str){
+			return str.match(new RegExp(_atodeMark));
+		}
+		
+		var _isEnd = function(str){
+			return _started && str.match(new RegExp("^$"));
+		}
+		
+		var _parseLine = function(lno, str){
+			
+			if(!_started && _isStart(str)){
+				_started = true;
+				return;
+			}
+			else if(_started && _isEnd(str)){
+				_started = false;
+				return;
+			}
+			else if(!_started){
+				return;
+			}
+			
+			var reg = new RegExp("^(?:・\s{0,}|\d{1,},\s{0,}|[０-９]{1,}、\s{0,})(.+)$");
+			if(!str.match(reg))
+				return;
+			
+			var title = RegExp.$1;
+			if(!_targetFilter.check(title))
+				return;
+			
+			var atode = _itemMng.createNewItem();
+			atode.Title = RegExp.$1;
+			atode.LineNo = lno;
+			_detectedCallback(atode);
+		}
+		
+		return {
+			parseLine : _parseLine
+		}
+	};
+
+	var OneLineAtodeParser = function(params){
+		/*
+			/^\t{0,}【あとで】(.+)$/ の行を抽出し、$1を後でやるリストアイテムとする
+		*/
+
+		var _atodeMark = params.atodeMark;
+		var _detectedCallback = params.detectedCallback;
+		var _itemMng = params.itemMng;
+		var _targetFilter = params.targetFilter;
+		
+		var _parseLine = function(lno, str){
+			
+			var reg = new RegExp("\t{0,}" + _atodeMark + "(.+)$");
+			if(!str.match(reg))
+				return;
+			
+			var title = RegExp.$1;
+			if(!_targetFilter.check(title))
+				return;
+			
+			var atode = _itemMng.createNewItem();
+			atode.Title = title;
+			atode.LineNo = lno;
+			_detectedCallback(atode);
+		}
+
+		return {
+			parseLine : _parseLine
+		}
+	};
+
+	var AtodeMultiParser = function(parsers){
+		var _parsers = parsers;
+		
+		var _parseLine = function(lno, str){
+			for(var i=0;i<_parsers.length;i++){
+				_parsers[i].parseLine(lno, str);
+			}
+		}
+		
+		return {
+			parseLine : _parseLine
+		}
+	};
+
+	var createParams = function(){
+		return {
+			atodeMark : "【あとで】",
+			detectedCallback : addCallback,
+			itemMng : new AtodeYaru(document.FullName),
+			targetFilter : new ParseTargetANDFilter([
+				new NotExistKeywordFilter("#すみ")
+				, new NotExistKeywordFilter("#済")
+				, new NotExistKeywordFilter("#済み")
+				, new NotExistKeywordFilter("#end")
+			])
+		};
+	};
+	
+	var p = createParams();
+	return new AtodeMultiParser([
+		new OneLineAtodeParser(p),
+		new AtodeListParser(p)
+	]);
+}
