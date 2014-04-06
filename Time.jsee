@@ -26,8 +26,8 @@ var TimeFinder = function(){
 
 //時刻クラス
 var Time = function(h, m){
-	var _h = h === undefined ? 0 : parseInt(h);
-	var _m = m === undefined ? 0 : parseInt(m);
+	var _h = h === undefined ? 0 : parseInt(h,10);
+	var _m = m === undefined ? 0 : parseInt(m,10);
 	
 	var _convMinutes = function(t){
 		return t.hour * 60 + t.minutes;
