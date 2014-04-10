@@ -1,5 +1,5 @@
 ﻿#include "..\Time.jsee"
-#include "..\Utils.jsee"
+#include "..\lib\Utils.jsee"
 
 function RunTest(timeMaker, finder){
 	OutputBar.Clear();

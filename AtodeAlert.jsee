@@ -1,5 +1,5 @@
-﻿#include "AtodeAlertParsers.jsee"
-#include "AtodeAlertResultViewers.jsee"
+﻿#include "lib\atode\AtodeAlertParsers.jsee"
+#include "lib\atode\AtodeAlertResultViewers.jsee"
 
 (function(){
 	var $d = document;
