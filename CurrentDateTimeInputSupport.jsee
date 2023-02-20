@@ -1,16 +1,13 @@
 ﻿#include "lib\Utils.jsee"
 #include "lib\EeObjectHelper.jsee"
 
-//スクリプト実行した際にその行がブランクであれば、 "+ yyyy-MM-dd : (HH:mm～ " を出力する。日付と時間は現在日時。
-//現在カーソル位置の前が"～"または"、"の場合 "HH:mm～" を出力する。時間は現在時刻。
-
 function main(){
 	var util = createUtils();
 	var now = util.createNichiji();
 	var isEmptyRow = eEObjectHelper.isEmptyRow();
 
 	if(isEmptyRow){
-		document.selection.text = "+ " + now.getYmdStr() + ": (" + now.getHmStr() + "～"
+		document.selection.text = "+ " + now.getYmdStr() + " : (" + now.getHmStr() + "～"
 		return;
 	}
 	
@@ -22,12 +19,7 @@ function main(){
 		return;
 	}
 	
-	/*if(!isNaN(parseInt(tailChar))){
-		document.selection.text += "～" + now.getHmStr() + "、";
-		return;
-	}*/
-	
-	if(tailChar === "、"){
+	if(tailChar === "、" || tailChar === "("){
 		document.selection.text += now.getHmStr() + "～";
 		return;
 	}
