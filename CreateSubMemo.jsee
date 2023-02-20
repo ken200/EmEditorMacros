@@ -1,11 +1,5 @@
 ﻿#include "lib\Utils.jsee"
 
-/*
-カーソル行に文字列がある場合は、それを拡張子をするファイルを生成する。
-生成の度にIDは変わる。(当初の「セクション毎の一意なID」というのはやめる。)
-文字列ない場合はデフォルトの拡張子(DEFAUL_EXT)で生成する。
-*/
-
 function createWord(len){
 	var chars = "qwertyuiopasdfghjklzxcvbnm1234567890ZXCVBNMASDFGHJKLPOIUYTREWQ";
 	var word = "";
@@ -16,20 +10,17 @@ function createWord(len){
 }
 
 
-//生成ファイルのデフォルト拡張子名
-var DEFAULT_EXT = "md";
-
 //マクロ呼び出し元のドキュメント
 var macroReqDoc = document;
 
 //各種必要情報
 var yPos = macroReqDoc.selection.GetActivePointY(eePosLogical);
 var lineStr = macroReqDoc.getLine(yPos);
-var ext = DEFAULT_EXT;
+var header = createWord(5);
 if(macroReqDoc.getLine(yPos) !== "")
-	ext = macroReqDoc.getLine(yPos);
-var fileName = createWord(5) + "_" + createWord(5) + "_" + createWord(5) + "_" + createWord(5);
-var newFileFullName = macroReqDoc.Path + "\\" + fileName + "." + ext;
+	header = macroReqDoc.getLine(yPos);
+var fileName = header + "_" + createWord(5) + "_" + createWord(5) + "_" + createWord(5);
+var newFileFullName = macroReqDoc.Path + "\\" + fileName + ".md";
 
 //ファイルの作成と保存
 editor.ExecuteCommandByID(4096);  // 新規
@@ -39,7 +30,7 @@ document.close();
 
 //生成ファイルへの参照パス(file:～)を書き込む
 macroReqDoc.selection.selectLine();
-macroReqDoc.selection.text = "file:" + fileName + "." + ext;
+macroReqDoc.selection.text = "file:" + fileName + ".md";
 
 ////生成したファイルを開く
 //editor.newFile();
